@@ -210,10 +210,12 @@ svg.serp{display:block;width:100%;height:auto;touch-action:none;user-select:none
 .ia .strings,.ia .dotg,.ia .phrases{transition:opacity .3s}
 .ia.won .strings{opacity:0}
 .ia .dot-i{font-family:var(--f-sans);font-weight:700;font-size:21px;fill:#fff;text-anchor:middle;dominant-baseline:central;pointer-events:none;
-  transform-box:fill-box;transform-origin:center;transition:transform .5s .2s cubic-bezier(.2,1.5,.4,1),fill .3s .1s}
+  transform-box:fill-box;transform-origin:center;transition:transform .4s .15s ease-out,opacity .25s .2s}
 .ia .dot,.ia .halo{transition:opacity .35s .1s}
 .ia.won .dot,.ia.won .halo{opacity:0}
-.ia.won .dot-i{transform:scale(2);fill:var(--accent)}
+.ia.won .dot-i{transform:scale(1.6);opacity:0}
+.ia .i-word{opacity:0;transition:opacity .3s .25s,fill .3s .8s}
+.ia.won .i-word{opacity:1}
 .ia .stage{transition:transform .6s 1s cubic-bezier(.3,1.3,.5,1)}
 .ia.won .stage{transform:translateX(-185px)}
 .ia .tick{opacity:0;transform-box:fill-box;transform-origin:center}
@@ -309,6 +311,7 @@ footer{font-size:13px;color:var(--muted)}
         <path id="iaPath" d="M50 72 C110 36 150 108 210 76 S300 38 345 80 S405 100 430 72" fill="none"/>
         <g class="strings"><path id="iaRest" class="rest"/><path id="iaDone" class="done-line"/></g>
         <g class="tick"><circle cx="398" cy="73" r="15"/><path d="M391 73.5l5 5 8.5-10"/></g>
+        <text class="word i-word" x="427" y="88" text-anchor="middle">I</text>
         <text class="word agree" x="445" y="88">AGREE</text>
         <g class="dotg"><g id="iaDot"><circle class="halo" r="27"/><ellipse class="dot" rx="18" ry="18"/><text class="dot-i" y="1">I</text></g></g>
       </g>
