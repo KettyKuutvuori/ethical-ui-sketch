@@ -138,11 +138,13 @@ svg.serp{display:block;width:100%;height:auto;touch-action:none;user-select:none
 .r-fill,.r-base{fill:none;stroke:var(--turn1);stroke-width:26;stroke-linecap:round;transition:stroke .25s}
 .r-fill{filter:drop-shadow(0 0 3px rgba(20,10,80,.25))}
 .r-base{opacity:0}
-.r-knob circle{fill:var(--turn1);stroke:var(--card);stroke-width:3;transition:fill .25s}
-.layer-1 .r-fill,.layer-1 .r-knob circle{stroke:var(--turn2);fill:var(--turn2)}
-.layer-1 .r-fill{fill:none}
-.layer-2 .r-fill,.layer-2 .r-knob circle{stroke:var(--turn3);fill:var(--turn3)}
-.layer-2 .r-fill{fill:none}
+.r-knob circle{fill:var(--turn1);stroke:#fff;stroke-width:3.5;transition:fill .25s;filter:drop-shadow(0 1px 3px rgba(20,10,80,.35))}
+.layer-1 .r-fill{stroke:var(--turn2)}
+.layer-1 .r-knob circle{fill:var(--turn2)}
+.layer-2 .r-fill{stroke:var(--turn3)}
+.layer-2 .r-knob circle{fill:var(--turn3)}
+.ring-center .dots{gap:7px;margin-top:8px}
+.ring-center .dots i{width:9px;height:9px}
 .layer-1 .r-base{opacity:1;stroke:var(--turn1)}
 .layer-2 .r-base{opacity:1;stroke:var(--turn2)}
 .dots i:nth-child(1).on{background:var(--turn1);border-color:var(--turn1)}
@@ -277,9 +279,8 @@ footer{font-size:13px;color:var(--muted)}
           <circle class="r-fill" id="arc" cx="100" cy="100" r="80" transform="rotate(-90 100 100)"/>
           <g class="r-knob" id="rknob"><circle r="12"/><path d="M-4 -3.5a5 5 0 1 1 -1 5.5M-4 -3.5v-3M-4 -3.5h3"/></g>
         </svg>
-        <div class="ring-center"><div class="big" id="turns">0.00</div><div class="sub">of 3 turns</div><div class="turn-lbl" id="turnLbl">Layer 1</div></div>
+        <div class="ring-center"><div class="big" id="turns">0.00</div><div class="sub">of 3 turns</div><div class="turn-lbl" id="turnLbl">Layer 1</div><div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i></div></div>
       </div>
-      <div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i></div>
       <p class="status" id="m3">Turn the ring clockwise, three times.</p>
     </section>
   </div>
@@ -633,7 +634,7 @@ function progress5(){
   ia.setAttribute('aria-valuenow',Math.round(i5/N5*100));
   phrases.forEach(p=>{if(!p.on&&i5>=p.i){p.on=true;say5(p.t);}});
   if(i5>=N5-1&&!done5){done5=true;drag5=false;i5=N5;c5.classList.remove('grabbing');const t=clk5.stop();
-    setTimeout(()=>c5.classList.add('won'),180); say5('✓ I AGREE · '+sec(t)+' from I to AGREE','ok');}
+    setTimeout(()=>c5.classList.add('won'),180); say5('Took '+sec(t)+'.','ok');}
 }
 ia.addEventListener('pointerdown',e=>{
   if(done5) return; const p=toIa(e);
