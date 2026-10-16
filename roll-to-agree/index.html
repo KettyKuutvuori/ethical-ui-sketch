@@ -10,7 +10,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Press+Start+2P&family=Pixelify+Sans:wght@500;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap">
 <style>
 /* Layout: one cinematic 16:9 game stage centred on a black page; HUD lives in a fixed 960×540 layer scaled to the stage. Single dark look by design. */
 :root{
@@ -113,9 +113,40 @@ header p{margin:0;font-size:14px;color:var(--mid)}
 .time,.sticky,.dist,.speed .lbl,#spd{display:none!important}
 .foot{display:none!important;font-size:13px;color:var(--mid);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .foot kbd{font-family:var(--f-mono);font-size:12px;padding:1px 6px;border:1px solid #2a4417;border-radius:4px;color:var(--ink)}
+/* ---------- pixel / retro mode (default; P toggles) ---------- */
+[hidden]{display:none!important}
+.px{--f-hud:"Press Start 2P",ui-monospace,monospace;--f-mono:"Press Start 2P",ui-monospace,monospace}
+.px #scene{image-rendering:pixelated;image-rendering:crisp-edges}
+.px .stage{border-radius:0;box-shadow:0 0 0 4px #0d1a08,0 0 0 8px var(--dim)}
+.px header h1{font-size:16px;font-weight:400;letter-spacing:.04em}
+.px .tag b{font-weight:400;font-size:11px;padding:6px 10px}
+.px .track .cp{border-radius:0;width:12px;height:12px}
+.px .track .cp.on,.px .track .goal.on{box-shadow:none}
+.px .track .wire{height:4px}
+.px .track .goal{border-radius:0;font-weight:400;font-size:9px;padding:4px 8px}
+.px .bars i{width:8px;height:16px}
+.px .hint b{font-weight:400;font-size:14px;clip-path:none;border-width:4px;border-style:solid;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.px .back-banner{font-weight:400;font-size:14px;clip-path:none;border-width:4px}
+.px .kick{font-weight:400;font-size:11px;letter-spacing:.3em}
+.px .kick i{height:4px;width:40px;opacity:1}
+.px .headline{font-family:"Pixelify Sans",var(--f-hud);font-weight:700;font-size:54px;letter-spacing:.01em;line-height:1.05;
+  background:none;-webkit-text-fill-color:#F4FFE4;color:#F4FFE4;text-shadow:4px 4px 0 #0b1a06,-2px -2px 0 #0b1a06,2px -2px 0 #0b1a06,-2px 2px 0 #0b1a06;filter:none}
+.px .hud.lit .headline{filter:none}
+.px .hud.lit .tag,.px .hud.lit .speed,.px .hud.lit .track,.px .hud.lit .kick{filter:drop-shadow(3px 3px 0 rgba(0,0,0,.75))}
+.px .title .inner,.px .title.on .inner,.px .title.out .inner{filter:none;transition-timing-function:steps(5,end)}
+.px .clear .strip{font-weight:400;font-size:11px;padding:8px 20px;clip-path:none}
+.px .clear .card{clip-path:none;border:4px solid var(--lime)}
+.px .clear .tick{border-radius:0}
+.px .clear .agree span{font-weight:400;font-size:30px}
+.px .stats .lbl{font-weight:400;font-size:8px}
+.px .stats b{font-weight:400;font-size:13px}
+.px .again{font-weight:400;font-size:11px;border-width:4px;padding:10px 16px}
+@media (prefers-reduced-motion: reduce){.px .hint b{animation:none}}
 @media (prefers-reduced-motion: reduce){.hint b{animation:none}.title .inner,.clear{transition:opacity .2s}}
 </style>
 
+<script>document.documentElement.classList.add("px")</script>
 <div class="wrap">
   <header>
     <h1>Roll to Agree</h1>
@@ -177,13 +208,26 @@ const CLAUSES=[
 ];
 const ZLEN=.08;
 
-const stage=document.getElementById('stage'),cv=document.getElementById('scene'),ctx=cv.getContext('2d'),hud=document.getElementById('hud');
+const stage=document.getElementById('stage'),cv=document.getElementById('scene'),ctxMain=cv.getContext('2d'),hud=document.getElementById('hud');
 const $=id=>document.getElementById(id);
 const els={time:$('time'),spd:$('spd'),bars:[...$('bars').children],speed:$('speed'),dist:$('dist'),meters:$('meters'),hint:$('hint'),sticky:$('sticky'),
   title:$('title'),kick:$('kick'),headline:$('headline'),back:$('backBanner'),clear:$('clear'),sTime:$('sTime'),sBack:$('sBack'),sRead:$('sRead'),
   cps:[...document.querySelectorAll('.track .cp')],wires:[...document.querySelectorAll('.track .wire')],goal:document.querySelector('.track .goal')};
 
-let scale=1,dpr=1;
+let scale=1,dpr=1,SX=1,ctx=ctxMain;
+// pixel mode: draw the scene at 320x180, dither to a small palette, then blow it up with hard edges
+const LW=320,LH=180,lo=document.createElement('canvas');lo.width=LW;lo.height=LH;const lctx=lo.getContext('2d',{willReadFrequently:true});
+const BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v/16-.5));
+const LV=7,STEP=255/(LV-1),AMP=.55*STEP;
+function dither(){const im=lctx.getImageData(0,0,LW,LH),d=im.data;
+  for(let y=0;y<LH;y++)for(let x=0;x<LW;x++){const o=(y*LW+x)*4,b=BAYER[(y&3)*4+(x&3)]*AMP;
+    for(let c=0;c<3;c++){const v=d[o+c]+b;d[o+c]=Math.max(0,Math.min(255,Math.round(v/STEP)*STEP));}}
+  lctx.putImageData(im,0,0);}
+let PIXEL=true;
+function draw(now){
+  if(!PIXEL){ctx=ctxMain;SX=scale*dpr;drawScene(now);return;}
+  ctx=lctx;SX=LW/W;drawScene(now);dither();
+  ctx=ctxMain;ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;ctx.drawImage(lo,0,0,cv.width,cv.height);}
 function fit(){const r=stage.getBoundingClientRect();scale=r.width/W;dpr=Math.min(devicePixelRatio||1,2);
   cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);hud.style.transform=`scale(${scale})`;}
 new ResizeObserver(fit).observe(stage);fit();
@@ -209,6 +253,7 @@ stage.addEventListener('pointerdown',e=>{if(e.button>0)return;stage.focus();try{
 stage.addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('keydown',e=>{
   if(e.key==='r'||e.key==='R'){reset();return;}
+  if(e.key==='p'||e.key==='P'){PIXEL=!PIXEL;document.documentElement.classList.toggle("px",PIXEL);return;}
   if(e.code==='Space'||e.key==='ArrowUp'||e.key==='w'){if(document.activeElement===$('again'))return;e.preventDefault();if(!e.repeat)press();}
 });
 addEventListener('keyup',e=>{if(e.code==='Space'||e.key==='ArrowUp'||e.key==='w')release();});
@@ -288,8 +333,8 @@ const mix=(c1,c2,f)=>c1.map((v,j)=>v+(c2[j]-v)*f);
 const css=(c,a)=>a===undefined?`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`:`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
 let litState=false;
 
-function draw(now){
-  ctx.setTransform(scale*dpr,0,0,scale*dpr,0,0);
+function drawScene(now){
+  ctx.setTransform(SX,0,0,SX,0,0);
   const P=pal(clamp(pos/FINISH,0,1));
   const lit=P.vig<.5; if(lit!==litState){litState=lit;document.getElementById('hud').classList.toggle('lit',lit);}
   // sky
@@ -329,7 +374,7 @@ function draw(now){
     ctx.save();ctx.shadowColor='#B7F36B';ctx.shadowBlur=Math.min(40,w*.25);
     ctx.fillStyle='#8fd14a';ctx.fillRect(gate.x-w*1.14,gate.y-w*.78,w*.06,w*.78);ctx.fillRect(gate.x+w*1.08,gate.y-w*.78,w*.06,w*.78);
     ctx.fillStyle='#B7F36B';ctx.beginPath();ctx.roundRect?ctx.roundRect(bx,by,bw,bh,w*.04):ctx.rect(bx,by,bw,bh);ctx.fill();ctx.restore();
-    if(w*.2>3){ctx.fillStyle='#050505';ctx.font=`700 ${w*.2}px "Chakra Petch", sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('AGREE',gate.x,by+bh/2+1);}}
+    if(w*.2>3){ctx.fillStyle='#050505';ctx.font=PIXEL?`${w*.13}px "Press Start 2P", monospace`:`700 ${w*.2}px "Chakra Petch", sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('AGREE',gate.x,by+bh/2+1);}}
   // horizon light streak during clauses
   if(false){ctx.save();ctx.globalAlpha=.5;const st=ctx.createLinearGradient(110,0,850,0);st.addColorStop(0,'rgba(217,255,168,0)');st.addColorStop(.5,'rgba(255,255,255,.8)');st.addColorStop(1,'rgba(217,255,168,0)');
     ctx.fillStyle=st;ctx.fillRect(110,234,740,3);ctx.restore();}
