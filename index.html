@@ -117,7 +117,12 @@ svg.serp{display:block;width:100%;height:auto;touch-action:none;user-select:none
 .transit .link:hover{color:var(--t-ink)}
 
 /* ---------- 2. Hold ---------- */
-.readout{display:flex;flex-direction:column;align-items:center;gap:6px}
+.tc{position:relative;height:150px;overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 32%,#000 68%,transparent);mask-image:linear-gradient(transparent,#000 32%,#000 68%,transparent)}
+.tc-roll{padding:53px 4px;will-change:transform}
+.tc-roll p{margin:0;height:44px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:15px;line-height:1.3;color:var(--muted);transition:color .25s,transform .25s}
+.tc-roll p:first-child{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.tc-roll p.on{color:var(--ink);font-weight:600;transform:scale(1.04)}
+.card.done .tc-roll p.on{color:var(--ok)}
 .box{background:var(--track);border:1px solid var(--line);border-radius:18px;padding:10px 24px;font-weight:700;font-size:40px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;display:flex;gap:10px;align-items:center}
 .box i{font-style:normal;color:var(--muted);font-weight:500}
 .sub{color:var(--muted);font-size:15px}
@@ -150,6 +155,7 @@ svg.serp{display:block;width:100%;height:auto;touch-action:none;user-select:none
 .dots i:nth-child(1).on{background:var(--turn1);border-color:var(--turn1)}
 .dots i:nth-child(2).on{background:var(--turn2);border-color:var(--turn2)}
 .dots i:nth-child(3).on{background:var(--turn3);border-color:var(--turn3)}
+[hidden]{display:none!important}
 .ring-center .turn-lbl{font-size:13px;font-weight:600;margin-top:4px;color:var(--turn2)}
 .r-knob path{fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
@@ -263,10 +269,7 @@ footer{font-size:13px;color:var(--muted)}
   <div class="grid">
     <section class="card" id="c2">
       <div class="c-head"><button class="link" data-reset="2">Start over</button><span class="clock" id="clk2">00:00</span></div>
-      <div class="readout">
-        <div class="box"><span id="sec2">0.0</span><i>:</i><span>8.0</span></div>
-        <div class="sub">seconds held</div>
-      </div>
+      <div class="tc" aria-hidden="true"><div class="tc-roll" id="tcRoll"><p>Terms of Service</p><p>1. We collect your name, email and location.</p><p>2. Location is tracked even when the app is closed.</p><p>3. Your data is shared with 214 partners.</p><p>4. Disputes go to binding arbitration.</p><p>5. You give up the right to a class action.</p><p>6. Your plan renews every year automatically.</p><p>7. Prices may change without notice.</p><p>8. Cancelling takes a phone call. Weekdays only.</p><p>9. These terms can change at any time.</p><p>That's all.</p></div></div>
       <div class="bar" aria-hidden="true"><div class="hatch"></div><div class="fill" id="bf"><span class="knob-i"><svg viewBox="0 0 16 16"><path d="M6 3l5 5-5 5"/></svg></span></div></div>
       <button class="hold-btn" id="hold">Hold to agree</button>
       <p class="status" id="m2">Press and hold. Let go early and it drains.</p>
@@ -281,7 +284,7 @@ footer{font-size:13px;color:var(--muted)}
           <circle class="r-fill" id="arc" cx="100" cy="100" r="80" transform="rotate(-90 100 100)"/>
           <g class="r-knob" id="rknob"><circle r="12"/><path d="M-4 -3.5a5 5 0 1 1 -1 5.5M-4 -3.5v-3M-4 -3.5h3"/></g>
         </svg>
-        <div class="ring-center"><div class="big" id="turns">0.00</div><div class="sub">of 3 turns</div><div class="turn-lbl" id="turnLbl">Layer 1</div><div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i></div></div>
+        <div class="ring-center"><div class="big" id="turns">0.00</div><div class="sub">of 3 turns</div><div class="turn-lbl" id="turnLbl" hidden>Layer 1</div><div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i></div></div>
       </div>
       <p class="status" id="m3">Turn the ring clockwise, three times.</p>
     </section>
@@ -444,11 +447,11 @@ addEventListener('resize',callout);
 draw();
 
 /* ---------- 2. Hold ---------- */
-const hold=document.getElementById('hold'), bf=document.getElementById('bf'), sec2=document.getElementById('sec2'), m2=document.getElementById('m2'), c2=document.getElementById('c2'), clk2=clock('clk2');
+const hold=document.getElementById('hold'), bf=document.getElementById('bf'), tcRoll=document.getElementById('tcRoll'), tcLines=[...document.querySelectorAll('#tcRoll p')], m2=document.getElementById('m2'), c2=document.getElementById('c2'), clk2=clock('clk2');
 const NEED=8000; let held=0, pressing=false, last=0, done2=false, raf2=null;
 const lines=[[0,'Hold to agree'],[.01,'Holding…'],[.25,'Keep holding'],[.45,'Have you read §3?'],[.65,'Thinking it over?'],[.84,'Fine-print zone'],[.95,'Nearly there']];
 function render2(){
-  const t=held/NEED; bf.style.width=`calc(42px + (100% - 42px) * ${t})`; sec2.textContent=(held/1000).toFixed(1);
+  const t=held/NEED; bf.style.width=`calc(42px + (100% - 42px) * ${t})`; {const n=tcLines.length-1,f=t*n,k=Math.round(f);tcRoll.style.transform=`translateY(${-f*44}px)`;tcLines.forEach((p,j)=>p.classList.toggle('on',j===k));}
   if(done2) return;
   let l=lines[0][1]; if(pressing||held>0) for(const [a,s] of lines) if(t>=a) l=s; hold.textContent=l;
   if(!pressing&&held>0) setStatus(m2,'Draining. Hold again to continue.','warn','status');
